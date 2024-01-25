@@ -1,113 +1,106 @@
-import Image from 'next/image'
+"use client";
+
+import classNames from "classnames";
+import MersenneTwister from "mersenne-twister";
+import { colorRotate } from "./utils/colorUtils";
+import chroma from "chroma-js";
+
+function jsNumberForAddress(address: string): number {
+  const addr = address.slice(2, 10);
+  const seed = parseInt(addr, 16);
+
+  return seed;
+}
+
+type Colors = Array<string>;
+
+const colors = [
+  "#01888c", // teal
+  "#fc7500", // bright orange
+  "#034f5d", // dark teal
+  "#f73f01", // orangered
+  "#fc1960", // magenta
+  "#c7144c", // raspberry
+  "#f3c100", // goldenrod
+  "#1598f2", // lightning blue
+  "#2465e1", // sail blue
+  "#f19e02", // gold
+];
+
+const wobble = 30;
+const shapeCount = 4;
+
+type FolderIconProps = { seed: string } & React.HTMLAttributes<HTMLDivElement>;
+
+const FolderIcon = ({ className, seed }: FolderIconProps) => {
+  const generator = new MersenneTwister(jsNumberForAddress(seed));
+  const files = Array(shapeCount)
+    .fill(0)
+    .map((_, i) => i + 1);
+
+  const genColor = (colors: Colors): string => {
+    const rand = generator.random(); // purposefully call the generator once, before using it again on the next line
+    const idx = Math.floor(colors.length * generator.random());
+    const color = colors.splice(idx, 1)[0];
+    return color;
+  };
+
+  const hueShift = (colors: Colors, g: MersenneTwister): Array<string> => {
+    const amount = g.random() * 30 - wobble / 2;
+    const rotate = (hex: string) => colorRotate(hex, amount);
+    return colors.map(rotate);
+  };
+
+  const genShape = (remainingColors: Colors) => {
+    const fill = genColor(remainingColors);
+
+    return <div className="h-[25%]" style={{ backgroundColor: fill }} />;
+  };
+
+  const remainingColors = hueShift(colors.slice(), generator);
+
+  return (
+    <div
+      className={classNames("relative flex flex-col justify-end", className)}
+      style={{ aspectRatio: 1.5 }}
+    >
+      <div
+        style={{
+          backgroundColor: chroma(genColor(remainingColors)).darken().hex(),
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 100,
+        }}
+        className="absolute top-0 w-1/3 -mb-1 h-7"
+      ></div>
+      <div className="overflow-hidden rounded-md z-10 h-[93%] drop-shadow-lg">
+        {files.map((file) => genShape(remainingColors))}
+      </div>
+    </div>
+  );
+};
 
 export default function Home() {
+  const folders = Array(10)
+    .fill(0)
+    .map((_, i) => i + 1);
+
+  const generateRandom32ByteHexString = () => {
+    if (typeof window === "undefined") throw new Error("window not available");
+    if (!window.crypto) throw new Error("window.crypto not available");
+    const randomBytes = new Uint8Array(32);
+    window.crypto.getRandomValues(randomBytes);
+    return Array.from(randomBytes, (byte) =>
+      byte.toString(16).padStart(2, "0")
+    ).join("");
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <main className="grid min-h-screen items-center justify-between p-24 grid-cols-5">
+      {folders.map((folder) => (
+        <div className="p-2">
+          <FolderIcon seed={generateRandom32ByteHexString()} />
         </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+      ))}
     </main>
-  )
+  );
 }
