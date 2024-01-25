@@ -1,104 +1,29 @@
 "use client";
 
-import classNames from "classnames";
-import MersenneTwister from "mersenne-twister";
-import { colorRotate } from "./utils/colorUtils";
-import chroma from "chroma-js";
-
-function jsNumberForAddress(address: string): number {
-  const addr = address.slice(2, 10);
-  const seed = parseInt(addr, 16);
-
-  return seed;
-}
-
-type Colors = Array<string>;
-
-const colors = [
-  "#01888c", // teal
-  "#fc7500", // bright orange
-  "#034f5d", // dark teal
-  "#f73f01", // orangered
-  "#fc1960", // magenta
-  "#c7144c", // raspberry
-  "#f3c100", // goldenrod
-  "#1598f2", // lightning blue
-  "#2465e1", // sail blue
-  "#f19e02", // gold
-];
-
-const wobble = 30;
-const shapeCount = 4;
-
-type FolderIconProps = { seed: string } & React.HTMLAttributes<HTMLDivElement>;
-
-const FolderIcon = ({ className, seed }: FolderIconProps) => {
-  const generator = new MersenneTwister(jsNumberForAddress(seed));
-  const files = Array(shapeCount)
-    .fill(0)
-    .map((_, i) => i + 1);
-
-  const genColor = (colors: Colors): string => {
-    const rand = generator.random(); // purposefully call the generator once, before using it again on the next line
-    const idx = Math.floor(colors.length * generator.random());
-    const color = colors.splice(idx, 1)[0];
-    return color;
-  };
-
-  const hueShift = (colors: Colors, g: MersenneTwister): Array<string> => {
-    const amount = g.random() * 30 - wobble / 2;
-    const rotate = (hex: string) => colorRotate(hex, amount);
-    return colors.map(rotate);
-  };
-
-  const genShape = (remainingColors: Colors) => {
-    const fill = genColor(remainingColors);
-
-    return <div className="h-[25%]" style={{ backgroundColor: fill }} />;
-  };
-
-  const remainingColors = hueShift(colors.slice(), generator);
-
-  return (
-    <div
-      className={classNames("relative flex flex-col justify-end", className)}
-      style={{ aspectRatio: 1.5 }}
-    >
-      <div
-        style={{
-          backgroundColor: chroma(genColor(remainingColors)).darken().hex(),
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 100,
-        }}
-        className="absolute top-0 w-1/3 -mb-1 h-7"
-      ></div>
-      <div className="overflow-hidden rounded-md z-10 h-[93%] drop-shadow-lg">
-        {files.map((file) => genShape(remainingColors))}
-      </div>
-    </div>
-  );
-};
+import FolderIcon from "./components/FolderIcon";
 
 export default function Home() {
-  const folders = Array(10)
-    .fill(0)
-    .map((_, i) => i + 1);
-
-  const generateRandom32ByteHexString = () => {
-    if (typeof window === "undefined") throw new Error("window not available");
-    if (!window.crypto) throw new Error("window.crypto not available");
-    const randomBytes = new Uint8Array(32);
-    window.crypto.getRandomValues(randomBytes);
-    return Array.from(randomBytes, (byte) =>
-      byte.toString(16).padStart(2, "0")
-    ).join("");
-  };
+  const folders = [
+    "c56ddcb20785312c94d6417ceab2f9cc306921ba1a9a3ad949c4ef37a3052bcb",
+    "34a4e06e5aa3dcd069fc8b1c5972f81ed49a8e0c04202f77e03539be1094b1e8",
+    "3730fbbf6a2b82e6285bc2f33f1ee517ea8343799c48bd1b7a4cd09d968ad997",
+    "56c19b84164e025ac882f8dfca6e900f39a92de058601949d473fc428fbbfa67",
+    "009d3f0f8eedac9e673b242c1ec425d02488b1c2a4265bd1d7e66d16d27c0a58",
+    "8c61e5b736e9ca5e1e4d359bba53ded99955f30e98de8b9d0eafe64e9f1af3c0",
+    "ae05d3bf18587cf021e850235fb687fcd779d990ee753ea76277c4578751cdbc",
+    "9b0f8f3024485977edf2ab82740198142f6a005bac9736197fb762b31aa36f14",
+    "44df4f0df568a73f13dd76d75304d7611e91042ff2d69d3d218f80aee207398c",
+    "f9e8f72d0228195c2c905cf85b360d2cf3476a27d7880dd10e4890cf16a9b76f",
+  ];
 
   return (
-    <main className="grid min-h-screen items-center justify-between p-24 grid-cols-5">
+    <main className="grid min-h-screen p-8 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
       {folders.map((folder) => (
-        <div className="p-2">
-          <FolderIcon seed={generateRandom32ByteHexString()} />
+        <div className="" key={folder}>
+          <FolderIcon
+            seed={folder}
+            className="hover:scale-105 transition-all hover:transition-all hover:cursor-pointer"
+          />
         </div>
       ))}
     </main>
